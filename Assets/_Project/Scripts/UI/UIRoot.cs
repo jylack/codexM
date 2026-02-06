@@ -1,9 +1,9 @@
 // 런타임 Canvas/UI 패널을 생성하고 화면 전환 및 UI-코어 연결을 담당합니다.
-using System.Collections.Generic;
 using Project.Core;
 using Project.Data;
 using Project.Gameplay;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Project.UI
@@ -30,11 +30,17 @@ namespace Project.UI
             _dayManager = dayManager;
             _mapManager = mapManager;
 
-            // 런타임에서 Canvas/EventSystem을 생성하고 패널을 구성
-            var canvasRoot = BuildCanvas();
-            _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
-            _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
-            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager);
+            // 기존 UIRoot/Canvas를 우선 재사용하고, 없으면 단일 Canvas + EventSystem을 생성합니다.
+            var canvasRoot = ResolveCanvas();
+
+            // 각 스크린은 프리팹 인스턴스를 우선 배치합니다.
+            var loginRoot = InstantiateScreenRoot(canvasRoot.transform, "LoginScreen");
+            var roomRoot = InstantiateScreenRoot(canvasRoot.transform, "RoomScreen");
+            var inGameRoot = InstantiateScreenRoot(canvasRoot.transform, "InGameScreen");
+
+            _loginPanel = new LoginPanelController(loginRoot, HandleLogin);
+            _roomPanel = new RoomPanelController(roomRoot, HandleStartStage, _mapManager, _gameState);
+            _inGamePanel = new InGamePanelController(inGameRoot, _dayManager);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
             _dayManager.OnRunEnded += OnRunEnded;
@@ -82,9 +88,19 @@ namespace Project.UI
             }
         }
 
-        private static GameObject BuildCanvas()
+        private static GameObject ResolveCanvas()
         {
-            var canvasGo = new GameObject("UIRoot_Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var existingCanvas = GameObject.Find("UIRoot/Canvas");
+            if (existingCanvas != null)
+            {
+                EnsureEventSystem();
+                return existingCanvas;
+            }
+
+            var root = new GameObject("UIRoot");
+            var canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasGo.transform.SetParent(root.transform, false);
+
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -92,10 +108,33 @@ namespace Project.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
 
-            var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-            Object.DontDestroyOnLoad(canvasGo);
-            Object.DontDestroyOnLoad(eventSystem);
+            EnsureEventSystem();
+            Object.DontDestroyOnLoad(root);
             return canvasGo;
+        }
+
+        private static Transform InstantiateScreenRoot(Transform parent, string screenName)
+        {
+            var prefab = Resources.Load<GameObject>($"UI/{screenName}");
+            if (prefab != null)
+            {
+                return Object.Instantiate(prefab, parent, false).transform;
+            }
+
+            var fallback = new GameObject(screenName, typeof(RectTransform));
+            fallback.transform.SetParent(parent, false);
+            return fallback.transform;
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (Object.FindObjectOfType<EventSystem>() != null)
+            {
+                return;
+            }
+
+            var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            Object.DontDestroyOnLoad(eventSystem);
         }
     }
 }
