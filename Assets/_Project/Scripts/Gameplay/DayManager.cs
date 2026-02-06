@@ -19,12 +19,14 @@ namespace Project.Gameplay
 
         private string _pendingSkillChoice;
         private bool _requestExit;
+        private bool _currencyRewardConfirmed;
 
         public event Action<StageInfo> OnStageEntered;
         public event Action<int> OnDayChanged;
         public event Action<string> OnBattleLog;
         public event Action<StatsSnapshot> OnStatsChanged;
         public event Action<List<SkillData>> OnSkillChoiceOffered;
+        public event Action<int> OnCurrencyRewardOffered;
         public event Action<RunResult> OnRunEnded;
 
         public DayManager(
@@ -60,6 +62,11 @@ namespace Project.Gameplay
         public void RequestExitStage()
         {
             _requestExit = true;
+        }
+
+        public void NotifyCurrencyRewardConfirmed()
+        {
+            _currencyRewardConfirmed = true;
         }
 
         private IEnumerator RunStage(string stageId)
@@ -106,13 +113,24 @@ namespace Project.Gameplay
         private IEnumerator WaitReward(DayDefinition day, RunContext run)
         {
             _pendingSkillChoice = null;
-            // CurrencyEvent는 화폐 보상 UI 흐름으로 처리
+            _currencyRewardConfirmed = false;
+
+            // CurrencyEvent는 화폐 보상 팝업 Confirm 이후 진행합니다.
             if (day.dayEventType == DayEventType.CurrencyEvent)
             {
                 var goldGain = Mathf.Max(10, day.goldFlat);
                 _gameState.SaveData.gold += goldGain;
-                OnBattleLog?.Invoke($"Currency reward: +{goldGain} gold");
-                yield return null;
+                OnCurrencyRewardOffered?.Invoke(goldGain);
+
+                while (!_currencyRewardConfirmed && !_requestExit)
+                {
+                    yield return null;
+                }
+
+                if (_currencyRewardConfirmed)
+                {
+                    OnBattleLog?.Invoke($"Currency reward: +{goldGain} gold");
+                }
                 yield break;
             }
 
