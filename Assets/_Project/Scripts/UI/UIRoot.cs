@@ -2,6 +2,7 @@
 using Project.Core;
 using Project.Gameplay;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Project.UI
@@ -37,13 +38,11 @@ namespace Project.UI
             _inGamePanel = new InGamePanelController(_canvasRoot.transform, _dayManager);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
-            _dayManager.OnRunEnded += OnRunEnded;
         }
 
         public void Dispose()
         {
             _sceneFlow.OnScreenChanged -= OnScreenChanged;
-            _dayManager.OnRunEnded -= OnRunEnded;
             _inGamePanel.Dispose();
         }
 
@@ -78,9 +77,10 @@ namespace Project.UI
             _dayManager.RequestStartStage(stageId);
         }
 
-        private void OnRunEnded(RunResult result)
+        private void HandleRunEndedFromInGamePanel()
         {
             _sceneFlow.Enter(ScreenType.Room);
+            _roomPanel.Refresh();
         }
 
         private void OnScreenChanged(ScreenType screen)
@@ -95,9 +95,19 @@ namespace Project.UI
             }
         }
 
-        private static GameObject BuildCanvas()
+        private static GameObject ResolveCanvas()
         {
-            var canvasGo = new GameObject("UIRoot_Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var existingCanvas = GameObject.Find("UIRoot/Canvas");
+            if (existingCanvas != null)
+            {
+                EnsureEventSystem();
+                return existingCanvas;
+            }
+
+            var root = new GameObject("UIRoot");
+            var canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasGo.transform.SetParent(root.transform, false);
+
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -105,10 +115,33 @@ namespace Project.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
 
-            var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-            Object.DontDestroyOnLoad(canvasGo);
-            Object.DontDestroyOnLoad(eventSystem);
+            EnsureEventSystem();
+            Object.DontDestroyOnLoad(root);
             return canvasGo;
+        }
+
+        private static Transform InstantiateScreenRoot(Transform parent, string screenName)
+        {
+            var prefab = Resources.Load<GameObject>($"UI/{screenName}");
+            if (prefab != null)
+            {
+                return Object.Instantiate(prefab, parent, false).transform;
+            }
+
+            var fallback = new GameObject(screenName, typeof(RectTransform));
+            fallback.transform.SetParent(parent, false);
+            return fallback.transform;
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (Object.FindObjectOfType<EventSystem>() != null)
+            {
+                return;
+            }
+
+            var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            Object.DontDestroyOnLoad(eventSystem);
         }
     }
 }
