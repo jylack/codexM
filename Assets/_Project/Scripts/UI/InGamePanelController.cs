@@ -13,8 +13,9 @@ namespace Project.UI
         private readonly GameObject _panel;
         private readonly Text _header;
         private readonly Text _log;
-        private readonly Button[] _skillButtons = new Button[3];
         private readonly DayManager _dayManager;
+        private readonly SkillRewardPopupController _skillRewardPopup;
+        private readonly CurrencyRewardPopupController _currencyRewardPopup;
         private readonly Action<StageInfo> _onStageEntered;
         private readonly Action<int> _onDayChanged;
 
@@ -27,25 +28,18 @@ namespace Project.UI
             _log.alignment = TextAnchor.UpperCenter;
             _log.rectTransform.sizeDelta = new Vector2(1200, 260);
 
-            for (var i = 0; i < _skillButtons.Length; i++)
-            {
-                var idx = i;
-                _skillButtons[i] = UIFactory.Button(_panel.transform, $"Skill {i + 1}", new Vector2((i - 1) * 280, -150), () =>
-                {
-                    _dayManager.SubmitSkillChoice(_skillButtons[idx].GetComponentInChildren<Text>().text);
-                    SetSkillButtonsActive(false);
-                });
-            }
-            SetSkillButtonsActive(false);
+            _skillRewardPopup = new SkillRewardPopupController(parent);
+            _currencyRewardPopup = new CurrencyRewardPopupController(parent);
 
             UIFactory.Button(_panel.transform, "Exit Run", new Vector2(0, -250), () => _dayManager.RequestExitStage());
 
             _onStageEntered = s => _header.text = $"{s.displayName} ({s.stageId})";
-            _onDayChanged = day => Append($"Day {day}");
+            _onDayChanged = day => Append($"Day {day}\n");
             _dayManager.OnStageEntered += _onStageEntered;
             _dayManager.OnDayChanged += _onDayChanged;
             _dayManager.OnBattleLog += Append;
             _dayManager.OnSkillChoiceOffered += OnSkillOffered;
+            _dayManager.OnCurrencyRewardOffered += OnCurrencyRewardOffered;
         }
 
         public void Dispose()
@@ -54,11 +48,14 @@ namespace Project.UI
             _dayManager.OnDayChanged -= _onDayChanged;
             _dayManager.OnBattleLog -= Append;
             _dayManager.OnSkillChoiceOffered -= OnSkillOffered;
+            _dayManager.OnCurrencyRewardOffered -= OnCurrencyRewardOffered;
         }
 
         public void SetActive(bool active)
         {
             _panel.SetActive(active);
+            _skillRewardPopup.SetActive(false);
+            _currencyRewardPopup.SetActive(false);
             if (active)
             {
                 _log.text = string.Empty;
@@ -67,26 +64,25 @@ namespace Project.UI
 
         private void OnSkillOffered(List<SkillData> skills)
         {
-            for (var i = 0; i < _skillButtons.Length; i++)
+            _skillRewardPopup.Open(skills, skillId =>
             {
-                var label = i < skills.Count ? skills[i].id : "N/A";
-                _skillButtons[i].GetComponentInChildren<Text>().text = label;
-            }
-            SetSkillButtonsActive(true);
-            Append("Choose a skill reward.");
+                _dayManager.SubmitSkillChoice(skillId);
+            });
+            Append("Choose a skill reward.\n");
         }
 
-        private void SetSkillButtonsActive(bool active)
+        private void OnCurrencyRewardOffered(int amount)
         {
-            foreach (var btn in _skillButtons)
+            _currencyRewardPopup.Open(amount, () =>
             {
-                btn.gameObject.SetActive(active);
-            }
+                _dayManager.NotifyCurrencyRewardConfirmed();
+                Append("Currency reward confirmed.\n");
+            });
         }
 
         private void Append(string line)
         {
-            _log.text += $"{line}";
+            _log.text += line;
         }
     }
 }
