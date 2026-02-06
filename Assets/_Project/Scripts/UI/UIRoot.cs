@@ -34,16 +34,14 @@ namespace Project.UI
             var canvasRoot = BuildCanvas();
             _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
             _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
-            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager);
+            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager, HandleRunEndedFromInGamePanel);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
-            _dayManager.OnRunEnded += OnRunEnded;
         }
 
         public void Dispose()
         {
             _sceneFlow.OnScreenChanged -= OnScreenChanged;
-            _dayManager.OnRunEnded -= OnRunEnded;
             _inGamePanel.Dispose();
         }
 
@@ -65,9 +63,10 @@ namespace Project.UI
             _dayManager.RequestStartStage(stageId);
         }
 
-        private void OnRunEnded(RunResult result)
+        private void HandleRunEndedFromInGamePanel()
         {
             _sceneFlow.Enter(ScreenType.Room);
+            _roomPanel.Refresh();
         }
 
         private void OnScreenChanged(ScreenType screen)
