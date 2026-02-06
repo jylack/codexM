@@ -1,7 +1,5 @@
 // 런타임 Canvas/UI 패널을 생성하고 화면 전환 및 UI-코어 연결을 담당합니다.
-using System.Collections.Generic;
 using Project.Core;
-using Project.Data;
 using Project.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +16,7 @@ namespace Project.UI
         private readonly MapManager _mapManager;
 
         private readonly LoginPanelController _loginPanel;
+        private readonly GameObject _canvasRoot;
         private readonly RoomPanelController _roomPanel;
         private readonly InGamePanelController _inGamePanel;
 
@@ -31,10 +30,11 @@ namespace Project.UI
             _mapManager = mapManager;
 
             // 런타임에서 Canvas/EventSystem을 생성하고 패널을 구성
-            var canvasRoot = BuildCanvas();
-            _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
-            _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
-            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager);
+            _canvasRoot = BuildCanvas();
+            _loginPanel = BuildLoginPanel(_canvasRoot.transform);
+            _loginPanel.Initialize(_authService, _accountRepository, _gameState, _sceneFlow);
+            _roomPanel = new RoomPanelController(_canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
+            _inGamePanel = new InGamePanelController(_canvasRoot.transform, _dayManager);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
             _dayManager.OnRunEnded += OnRunEnded;
@@ -47,16 +47,29 @@ namespace Project.UI
             _inGamePanel.Dispose();
         }
 
-        private void HandleLogin(string accountId)
+
+
+        private LoginPanelController BuildLoginPanel(Transform parent)
         {
-            // 로그인 성공 시 계정 저장 데이터 로드
-            if (!_authService.Login(accountId))
+            var prefab = Resources.Load<GameObject>("LoginScreen");
+            if (prefab != null)
             {
-                return;
+                var instance = Object.Instantiate(prefab, parent, false);
+                var controller = instance.GetComponent<LoginPanelController>();
+                if (controller != null)
+                {
+                    return controller;
+                }
+
+                Debug.LogWarning("LoginScreen prefab에 LoginPanelController가 없어 런타임 UI를 생성합니다.");
+                Object.Destroy(instance);
             }
 
-            _gameState.SetSaveData(_accountRepository.Load(accountId));
-            _sceneFlow.Enter(ScreenType.Room);
+            var fallback = new GameObject("LoginScreen", typeof(RectTransform), typeof(LoginPanelController));
+            fallback.transform.SetParent(parent, false);
+            var fallbackController = fallback.GetComponent<LoginPanelController>();
+            fallbackController.SetupRuntimeFallbackUI();
+            return fallbackController;
         }
 
         private void HandleStartStage(string stageId)
