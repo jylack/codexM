@@ -4,15 +4,14 @@ using System.Collections.Generic;
 using Project.Core;
 using Project.Gameplay;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Project.UI
 {
     public class RoomPanelController
     {
         private readonly GameObject _panel;
-        private readonly Text _status;
-        private readonly Text _cards;
+        private readonly UITextRef _status;
+        private readonly UITextRef _cards;
         private readonly StageSelectController _stageSelect = new StageSelectController();
         private readonly MapManager _mapManager;
         private readonly GameState _gameState;

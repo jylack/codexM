@@ -2,6 +2,9 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+#if TMP_PRESENT
+using TMPro;
+#endif
 
 namespace Project.UI
 {
@@ -21,8 +24,18 @@ namespace Project.UI
             return go;
         }
 
-        public static Text Text(Transform parent, string text, Vector2 anchoredPos)
+        public static UITextRef Text(Transform parent, string text, Vector2 anchoredPos)
         {
+#if TMP_PRESENT
+            var go = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            go.transform.SetParent(parent, false);
+            var t = go.GetComponent<TextMeshProUGUI>();
+            t.text = text;
+            t.color = Color.white;
+            t.alignment = TextAlignmentOptions.Center;
+            t.fontSize = 36;
+            var rt = go.GetComponent<RectTransform>();
+#else
             var go = new GameObject("Text", typeof(RectTransform), typeof(Text));
             go.transform.SetParent(parent, false);
             var t = go.GetComponent<Text>();
@@ -31,9 +44,10 @@ namespace Project.UI
             t.color = Color.white;
             t.alignment = TextAnchor.MiddleCenter;
             var rt = go.GetComponent<RectTransform>();
+#endif
             rt.sizeDelta = new Vector2(900, 70);
             rt.anchoredPosition = anchoredPos;
-            return t;
+            return new UITextRef(t);
         }
 
         public static Button Button(Transform parent, string label, Vector2 anchoredPos, Action onClick)
@@ -54,8 +68,46 @@ namespace Project.UI
             return button;
         }
 
-        public static InputField Input(Transform parent, string placeholder, Vector2 anchoredPos)
+        public static UIInputRef Input(Transform parent, string placeholder, Vector2 anchoredPos)
         {
+#if TMP_PRESENT
+            var go = new GameObject("Input", typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(350, 60);
+            rt.anchoredPosition = anchoredPos;
+            go.GetComponent<Image>().color = Color.white;
+
+            var textObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObj.transform.SetParent(go.transform, false);
+            var text = textObj.GetComponent<TextMeshProUGUI>();
+            text.color = Color.black;
+            text.alignment = TextAlignmentOptions.Left;
+            text.fontSize = 30;
+            text.rectTransform.anchorMin = Vector2.zero;
+            text.rectTransform.anchorMax = Vector2.one;
+            text.rectTransform.offsetMin = new Vector2(10, 6);
+            text.rectTransform.offsetMax = new Vector2(-10, -6);
+
+            var placeholderObj = new GameObject("Placeholder", typeof(RectTransform), typeof(TextMeshProUGUI));
+            placeholderObj.transform.SetParent(go.transform, false);
+            var ph = placeholderObj.GetComponent<TextMeshProUGUI>();
+            ph.text = placeholder;
+            ph.fontStyle = FontStyles.Italic;
+            ph.color = Color.gray;
+            ph.alignment = TextAlignmentOptions.Left;
+            ph.fontSize = 30;
+            ph.rectTransform.anchorMin = Vector2.zero;
+            ph.rectTransform.anchorMax = Vector2.one;
+            ph.rectTransform.offsetMin = new Vector2(10, 6);
+            ph.rectTransform.offsetMax = new Vector2(-10, -6);
+
+            var input = go.GetComponent<TMP_InputField>();
+            input.textViewport = rt;
+            input.textComponent = text;
+            input.placeholder = ph;
+            return new UIInputRef(input);
+#else
             var go = new GameObject("Input", typeof(RectTransform), typeof(Image), typeof(InputField));
             go.transform.SetParent(parent, false);
             var rt = go.GetComponent<RectTransform>();
@@ -89,7 +141,31 @@ namespace Project.UI
             var input = go.GetComponent<InputField>();
             input.textComponent = text;
             input.placeholder = ph;
-            return input;
+            return new UIInputRef(input);
+#endif
+        }
+
+        public static void SetButtonLabel(Button button, string label)
+        {
+#if TMP_PRESENT
+            var text = button.GetComponentInChildren<TMP_Text>();
+#else
+            var text = button.GetComponentInChildren<Text>();
+#endif
+            if (text != null)
+            {
+                text.text = label;
+            }
+        }
+
+        public static string GetButtonLabel(Button button)
+        {
+#if TMP_PRESENT
+            var text = button.GetComponentInChildren<TMP_Text>();
+#else
+            var text = button.GetComponentInChildren<Text>();
+#endif
+            return text != null ? text.text : string.Empty;
         }
     }
 }

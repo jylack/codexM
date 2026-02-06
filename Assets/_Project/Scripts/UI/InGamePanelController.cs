@@ -11,15 +11,9 @@ namespace Project.UI
     public class InGamePanelController
     {
         private readonly GameObject _panel;
-        private readonly Text _stageLabel;
-        private readonly Text _dayLabel;
-        private readonly Text _logContent;
-        private readonly ScrollRect _logScrollRect;
-        private readonly Text _hpLabel;
-        private readonly Text _atkLabel;
-        private readonly Text _defLabel;
-        private readonly Text _spdLabel;
-        private readonly SkillRewardPopup _skillRewardPopup;
+        private readonly UITextRef _header;
+        private readonly UITextRef _log;
+        private readonly Button[] _skillButtons = new Button[3];
         private readonly DayManager _dayManager;
         private readonly Action _onRunEndedToRoom;
 
@@ -39,11 +33,16 @@ namespace Project.UI
 
             _panel = UIFactory.Panel(parent, "InGamePanel");
 
-            _stageLabel = UIFactory.Text(_panel.transform, "Stage", new Vector2(0, 240));
-            _stageLabel.rectTransform.sizeDelta = new Vector2(1000, 60);
-
-            _dayLabel = UIFactory.Text(_panel.transform, "Day 1/1", new Vector2(0, 190));
-            _dayLabel.rectTransform.sizeDelta = new Vector2(500, 50);
+            for (var i = 0; i < _skillButtons.Length; i++)
+            {
+                var idx = i;
+                _skillButtons[i] = UIFactory.Button(_panel.transform, $"Skill {i + 1}", new Vector2((i - 1) * 280, -150), () =>
+                {
+                    _dayManager.SubmitSkillChoice(UIFactory.GetButtonLabel(_skillButtons[idx]));
+                    SetSkillButtonsActive(false);
+                });
+            }
+            SetSkillButtonsActive(false);
 
             _logScrollRect = BuildBattleLogArea(_panel.transform);
             _logContent = _logScrollRect.content.GetComponent<Text>();
@@ -97,9 +96,13 @@ namespace Project.UI
 
         private void OnStageEntered(StageInfo stage)
         {
-            _totalDays = Mathf.Max(1, stage.totalDays);
-            _stageLabel.text = $"{stage.displayName} ({stage.stageId})";
-            _dayLabel.text = $"Day 1/{_totalDays}";
+            for (var i = 0; i < _skillButtons.Length; i++)
+            {
+                var label = i < skills.Count ? skills[i].id : "N/A";
+                UIFactory.SetButtonLabel(_skillButtons[i], label);
+            }
+            SetSkillButtonsActive(true);
+            Append("Choose a skill reward.");
         }
 
         private void OnDayChanged(int day)
