@@ -1,3 +1,4 @@
+// (확장용) 맵 단위에서 스테이지 목록을 보관하는 ScriptableObject입니다.
 using System.Collections.Generic;
 using UnityEngine;
 

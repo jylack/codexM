@@ -1,3 +1,4 @@
+// 스테이지 입장부터 일차 루프, 보상 처리, 클리어 저장까지 핵심 흐름을 담당합니다.
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -74,16 +75,19 @@ namespace Project.Gameplay
 
             OnStageEntered?.Invoke(new StageInfo { stageId = stage.stageId, displayName = stage.displayName, totalDays = stage.days.Count });
 
+            // 현재 일차가 총 일차를 넘을 때까지 반복
             while (run.currentDay <= stage.days.Count && !_requestExit)
             {
                 var day = stage.days[run.currentDay - 1];
                 OnDayChanged?.Invoke(run.currentDay);
 
+                // Day 1 + None 이벤트는 스킵 규칙 적용
                 if (!(run.currentDay == 1 && day.dayEventType == DayEventType.None))
                 {
                     yield return _stageManager.ExecuteDayEvent(day, run);
                 }
 
+                // 매일 이벤트 처리 후 보상 UI는 반드시 수행
                 yield return WaitReward(day, run);
                 run.currentDay++;
             }
@@ -102,6 +106,7 @@ namespace Project.Gameplay
         private IEnumerator WaitReward(DayDefinition day, RunContext run)
         {
             _pendingSkillChoice = null;
+            // CurrencyEvent는 화폐 보상 UI 흐름으로 처리
             if (day.dayEventType == DayEventType.CurrencyEvent)
             {
                 var goldGain = Mathf.Max(10, day.goldFlat);
@@ -111,6 +116,7 @@ namespace Project.Gameplay
                 yield break;
             }
 
+            // 그 외 이벤트는 스킬 3개 제안 후 1개 선택
             var offer = new List<SkillData>();
             for (var i = 0; i < Mathf.Min(3, _skillPool.Count); i++)
             {

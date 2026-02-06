@@ -1,3 +1,4 @@
+// 계정별 저장 데이터를 PlayerPrefs(JSON)로 로드/저장하는 저장소입니다.
 using Project.Data;
 using UnityEngine;
 

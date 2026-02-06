@@ -1,3 +1,4 @@
+// 로그인 입력(accountId)을 검증하고 현재 로그인 계정을 보관합니다.
 namespace Project.Core
 {
     public class AuthService

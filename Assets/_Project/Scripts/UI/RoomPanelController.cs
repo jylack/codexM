@@ -1,3 +1,4 @@
+// 룸 패널에서 스테이지 카드 탐색과 시작 요청을 처리합니다.
 using System;
 using System.Collections.Generic;
 using Project.Core;

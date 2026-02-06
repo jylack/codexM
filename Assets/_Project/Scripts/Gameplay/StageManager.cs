@@ -1,3 +1,4 @@
+// DayDefinition의 이벤트 타입에 따라 해당 일차 이벤트를 실행합니다.
 using System.Collections;
 using Project.Data;
 using UnityEngine;

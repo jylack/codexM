@@ -1,3 +1,4 @@
+// 런타임 Canvas/UI 패널을 생성하고 화면 전환 및 UI-코어 연결을 담당합니다.
 using System.Collections.Generic;
 using Project.Core;
 using Project.Data;
@@ -29,6 +30,7 @@ namespace Project.UI
             _dayManager = dayManager;
             _mapManager = mapManager;
 
+            // 런타임에서 Canvas/EventSystem을 생성하고 패널을 구성
             var canvasRoot = BuildCanvas();
             _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
             _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
@@ -47,6 +49,7 @@ namespace Project.UI
 
         private void HandleLogin(string accountId)
         {
+            // 로그인 성공 시 계정 저장 데이터 로드
             if (!_authService.Login(accountId))
             {
                 return;

@@ -1,3 +1,4 @@
+// 로그인 패널 UI를 구성하고 로그인 버튼 이벤트를 전달합니다.
 using System;
 using UnityEngine;
 using UnityEngine.UI;

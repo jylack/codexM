@@ -1,3 +1,4 @@
+// UGUI 기본 요소(패널/텍스트/버튼/입력창)를 코드로 생성하는 헬퍼입니다.
 using System;
 using UnityEngine;
 using UnityEngine.UI;

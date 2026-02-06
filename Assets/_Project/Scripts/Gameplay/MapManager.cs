@@ -1,3 +1,4 @@
+// 스테이지 ID로 StageDefinitionSO를 조회하고 목록을 정렬해 제공하는 매니저입니다.
 using System.Collections.Generic;
 using Project.Data;
 
