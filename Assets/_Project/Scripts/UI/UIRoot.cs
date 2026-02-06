@@ -30,26 +30,18 @@ namespace Project.UI
             _dayManager = dayManager;
             _mapManager = mapManager;
 
-            // 기존 UIRoot/Canvas를 우선 재사용하고, 없으면 단일 Canvas + EventSystem을 생성합니다.
-            var canvasRoot = ResolveCanvas();
-
-            // 각 스크린은 프리팹 인스턴스를 우선 배치합니다.
-            var loginRoot = InstantiateScreenRoot(canvasRoot.transform, "LoginScreen");
-            var roomRoot = InstantiateScreenRoot(canvasRoot.transform, "RoomScreen");
-            var inGameRoot = InstantiateScreenRoot(canvasRoot.transform, "InGameScreen");
-
-            _loginPanel = new LoginPanelController(loginRoot, HandleLogin);
-            _roomPanel = new RoomPanelController(roomRoot, HandleStartStage, _mapManager, _gameState);
-            _inGamePanel = new InGamePanelController(inGameRoot, _dayManager);
+            // 런타임에서 Canvas/EventSystem을 생성하고 패널을 구성
+            var canvasRoot = BuildCanvas();
+            _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
+            _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
+            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager, HandleRunEndedFromInGamePanel);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
-            _dayManager.OnRunEnded += OnRunEnded;
         }
 
         public void Dispose()
         {
             _sceneFlow.OnScreenChanged -= OnScreenChanged;
-            _dayManager.OnRunEnded -= OnRunEnded;
             _inGamePanel.Dispose();
         }
 
@@ -71,9 +63,10 @@ namespace Project.UI
             _dayManager.RequestStartStage(stageId);
         }
 
-        private void OnRunEnded(RunResult result)
+        private void HandleRunEndedFromInGamePanel()
         {
             _sceneFlow.Enter(ScreenType.Room);
+            _roomPanel.Refresh();
         }
 
         private void OnScreenChanged(ScreenType screen)
