@@ -1,3 +1,4 @@
+// 몬스터 그룹 ScriptableObject 스키마 정의입니다.
 using System.Collections.Generic;
 using UnityEngine;
 

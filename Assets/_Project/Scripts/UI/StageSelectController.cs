@@ -1,3 +1,4 @@
+// 현재 도전 스테이지 기준으로 [이전, 현재, 다음] 3카드 뷰를 계산합니다.
 using System.Collections.Generic;
 using System.Linq;
 

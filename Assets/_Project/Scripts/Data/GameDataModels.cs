@@ -1,3 +1,4 @@
+// 게임 전반에서 사용하는 공통 데이터 모델(세이브/스탯/런타임 결과 등) 정의 파일입니다.
 using System;
 using System.Collections.Generic;
 using UnityEngine;

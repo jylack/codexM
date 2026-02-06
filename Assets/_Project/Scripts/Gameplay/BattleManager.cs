@@ -1,3 +1,4 @@
+// 간단한 턴제 전투를 수행하고 전투 로그/스탯 변경 이벤트를 발행합니다.
 using System;
 using System.Collections;
 using Project.Data;

@@ -1,3 +1,4 @@
+// 스킬 ScriptableObject 스키마 정의입니다.
 using UnityEngine;
 
 namespace Project.Data

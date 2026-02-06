@@ -1,3 +1,4 @@
+// 스테이지/일차(day) 구성 정보를 담는 ScriptableObject 스키마입니다.
 using System;
 using System.Collections.Generic;
 using UnityEngine;

@@ -1,3 +1,4 @@
+// 인게임 로그/보상 선택/종료 버튼 UI와 DayManager 이벤트 연결을 담당합니다.
 using System;
 using System.Collections.Generic;
 using Project.Data;

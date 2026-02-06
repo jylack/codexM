@@ -1,3 +1,4 @@
+// 영구 저장 데이터(SaveData)와 스테이지 진행 중 임시 데이터(RunContext)를 관리합니다.
 using Project.Data;
 
 namespace Project.Core
