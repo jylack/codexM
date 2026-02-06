@@ -11,8 +11,8 @@ namespace Project.UI
     public class InGamePanelController
     {
         private readonly GameObject _panel;
-        private readonly Text _header;
-        private readonly Text _log;
+        private readonly UITextRef _header;
+        private readonly UITextRef _log;
         private readonly Button[] _skillButtons = new Button[3];
         private readonly DayManager _dayManager;
         private readonly Action<StageInfo> _onStageEntered;
@@ -32,7 +32,7 @@ namespace Project.UI
                 var idx = i;
                 _skillButtons[i] = UIFactory.Button(_panel.transform, $"Skill {i + 1}", new Vector2((i - 1) * 280, -150), () =>
                 {
-                    _dayManager.SubmitSkillChoice(_skillButtons[idx].GetComponentInChildren<Text>().text);
+                    _dayManager.SubmitSkillChoice(UIFactory.GetButtonLabel(_skillButtons[idx]));
                     SetSkillButtonsActive(false);
                 });
             }
@@ -70,7 +70,7 @@ namespace Project.UI
             for (var i = 0; i < _skillButtons.Length; i++)
             {
                 var label = i < skills.Count ? skills[i].id : "N/A";
-                _skillButtons[i].GetComponentInChildren<Text>().text = label;
+                UIFactory.SetButtonLabel(_skillButtons[i], label);
             }
             SetSkillButtonsActive(true);
             Append("Choose a skill reward.");
