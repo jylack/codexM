@@ -31,11 +31,10 @@ namespace Project.UI
             _mapManager = mapManager;
 
             // 런타임에서 Canvas/EventSystem을 생성하고 패널을 구성
-            _canvasRoot = BuildCanvas();
-            _loginPanel = BuildLoginPanel(_canvasRoot.transform);
-            _loginPanel.Initialize(_authService, _accountRepository, _gameState, _sceneFlow);
-            _roomPanel = new RoomPanelController(_canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
-            _inGamePanel = new InGamePanelController(_canvasRoot.transform, _dayManager);
+            var canvasRoot = BuildCanvas();
+            _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
+            _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, HandleLogout, _mapManager, _gameState);
+            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
         }
@@ -77,7 +76,13 @@ namespace Project.UI
             _dayManager.RequestStartStage(stageId);
         }
 
-        private void HandleRunEndedFromInGamePanel()
+        private void HandleLogout()
+        {
+            _authService.Logout();
+            _sceneFlow.Enter(ScreenType.Login);
+        }
+
+        private void OnRunEnded(RunResult result)
         {
             _sceneFlow.Enter(ScreenType.Room);
             _roomPanel.Refresh();

@@ -15,5 +15,10 @@ namespace Project.Core
             CurrentAccountId = accountId.Trim();
             return true;
         }
+
+        public void Logout()
+        {
+            CurrentAccountId = null;
+        }
     }
 }
