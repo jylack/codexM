@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Project.Core;
 using Project.Gameplay;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Project.UI
 {

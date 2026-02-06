@@ -2,7 +2,6 @@
 using System.Reflection;
 using Project.Core;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Project.UI
 {
@@ -92,42 +91,11 @@ namespace Project.UI
 
         private void HandleSignUpClicked()
         {
-            if (TryAuthenticate(isSignUp: true, out var normalizedId))
-            {
-                LoadAccountAndEnterRoom(normalizedId);
-                SetStatus($"회원가입(프로토타입) 완료: {normalizedId}", true);
-                return;
-            }
-
-            SetStatus("회원가입 실패: ID를 확인하세요.", false);
-        }
-
-        private bool TryAuthenticate(bool isSignUp, out string normalizedId)
-        {
-            normalizedId = string.Empty;
-            var rawId = idInput != null ? idInput.text : string.Empty;
-            var password = passwordInput != null ? passwordInput.text : string.Empty;
-
-            if (string.IsNullOrWhiteSpace(rawId) || _authService == null)
-            {
-                return false;
-            }
-
-            var id = rawId.Trim();
-            var loginSucceeded = InvokeAuthLogin(id, password);
-            if (!loginSucceeded && isSignUp)
-            {
-                // 프로토타입 정책: SignUp은 Login과 동일 정책을 사용합니다.
-                loginSucceeded = _authService.Login(id);
-            }
-
-            if (!loginSucceeded)
-            {
-                return false;
-            }
-
-            normalizedId = string.IsNullOrWhiteSpace(_authService.CurrentAccountId) ? id : _authService.CurrentAccountId;
-            return true;
+            _panel = UIFactory.Panel(parent, "LoginPanel");
+            UIFactory.Text(_panel.transform, "Login", new Vector2(0, 220));
+            var input = UIFactory.Input(_panel.transform, "account id", new Vector2(0, 70));
+            var button = UIFactory.Button(_panel.transform, "Login", new Vector2(0, -40), () => onLogin?.Invoke(input.text));
+            UIFactory.SetButtonLabel(button, "Login");
         }
 
         private bool InvokeAuthLogin(string id, string password)
