@@ -86,8 +86,7 @@ namespace Project.UI
 
         private void Append(string line)
         {
-            _log.text += $"
-{line}";
+            _log.text += $"{line}";
         }
     }
 }
