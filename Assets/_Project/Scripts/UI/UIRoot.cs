@@ -1,9 +1,8 @@
 // 런타임 Canvas/UI 패널을 생성하고 화면 전환 및 UI-코어 연결을 담당합니다.
-using System.Collections.Generic;
 using Project.Core;
-using Project.Data;
 using Project.Gameplay;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Project.UI
@@ -18,6 +17,7 @@ namespace Project.UI
         private readonly MapManager _mapManager;
 
         private readonly LoginPanelController _loginPanel;
+        private readonly GameObject _canvasRoot;
         private readonly RoomPanelController _roomPanel;
         private readonly InGamePanelController _inGamePanel;
 
@@ -31,32 +31,44 @@ namespace Project.UI
             _mapManager = mapManager;
 
             // 런타임에서 Canvas/EventSystem을 생성하고 패널을 구성
-            var canvasRoot = BuildCanvas();
-            _loginPanel = new LoginPanelController(canvasRoot.transform, HandleLogin);
-            _roomPanel = new RoomPanelController(canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
-            _inGamePanel = new InGamePanelController(canvasRoot.transform, _dayManager);
+            _canvasRoot = BuildCanvas();
+            _loginPanel = BuildLoginPanel(_canvasRoot.transform);
+            _loginPanel.Initialize(_authService, _accountRepository, _gameState, _sceneFlow);
+            _roomPanel = new RoomPanelController(_canvasRoot.transform, HandleStartStage, _mapManager, _gameState);
+            _inGamePanel = new InGamePanelController(_canvasRoot.transform, _dayManager);
 
             _sceneFlow.OnScreenChanged += OnScreenChanged;
-            _dayManager.OnRunEnded += OnRunEnded;
         }
 
         public void Dispose()
         {
             _sceneFlow.OnScreenChanged -= OnScreenChanged;
-            _dayManager.OnRunEnded -= OnRunEnded;
             _inGamePanel.Dispose();
         }
 
-        private void HandleLogin(string accountId)
+
+
+        private LoginPanelController BuildLoginPanel(Transform parent)
         {
-            // 로그인 성공 시 계정 저장 데이터 로드
-            if (!_authService.Login(accountId))
+            var prefab = Resources.Load<GameObject>("LoginScreen");
+            if (prefab != null)
             {
-                return;
+                var instance = Object.Instantiate(prefab, parent, false);
+                var controller = instance.GetComponent<LoginPanelController>();
+                if (controller != null)
+                {
+                    return controller;
+                }
+
+                Debug.LogWarning("LoginScreen prefab에 LoginPanelController가 없어 런타임 UI를 생성합니다.");
+                Object.Destroy(instance);
             }
 
-            _gameState.SetSaveData(_accountRepository.Load(accountId));
-            _sceneFlow.Enter(ScreenType.Room);
+            var fallback = new GameObject("LoginScreen", typeof(RectTransform), typeof(LoginPanelController));
+            fallback.transform.SetParent(parent, false);
+            var fallbackController = fallback.GetComponent<LoginPanelController>();
+            fallbackController.SetupRuntimeFallbackUI();
+            return fallbackController;
         }
 
         private void HandleStartStage(string stageId)
@@ -65,9 +77,10 @@ namespace Project.UI
             _dayManager.RequestStartStage(stageId);
         }
 
-        private void OnRunEnded(RunResult result)
+        private void HandleRunEndedFromInGamePanel()
         {
             _sceneFlow.Enter(ScreenType.Room);
+            _roomPanel.Refresh();
         }
 
         private void OnScreenChanged(ScreenType screen)
@@ -82,9 +95,19 @@ namespace Project.UI
             }
         }
 
-        private static GameObject BuildCanvas()
+        private static GameObject ResolveCanvas()
         {
-            var canvasGo = new GameObject("UIRoot_Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var existingCanvas = GameObject.Find("UIRoot/Canvas");
+            if (existingCanvas != null)
+            {
+                EnsureEventSystem();
+                return existingCanvas;
+            }
+
+            var root = new GameObject("UIRoot");
+            var canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasGo.transform.SetParent(root.transform, false);
+
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -92,10 +115,33 @@ namespace Project.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
 
-            var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-            Object.DontDestroyOnLoad(canvasGo);
-            Object.DontDestroyOnLoad(eventSystem);
+            EnsureEventSystem();
+            Object.DontDestroyOnLoad(root);
             return canvasGo;
+        }
+
+        private static Transform InstantiateScreenRoot(Transform parent, string screenName)
+        {
+            var prefab = Resources.Load<GameObject>($"UI/{screenName}");
+            if (prefab != null)
+            {
+                return Object.Instantiate(prefab, parent, false).transform;
+            }
+
+            var fallback = new GameObject(screenName, typeof(RectTransform));
+            fallback.transform.SetParent(parent, false);
+            return fallback.transform;
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (Object.FindObjectOfType<EventSystem>() != null)
+            {
+                return;
+            }
+
+            var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            Object.DontDestroyOnLoad(eventSystem);
         }
     }
 }
